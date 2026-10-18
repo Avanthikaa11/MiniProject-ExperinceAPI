@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd       http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd       http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+
+    <!-- Experience API: GET all Contacts -->
+    <api-gateway:autodiscovery apiId="21242354" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="addbd4e4-9743-436c-9c98-b9514ceae162" flowRef="get-all-contacts-experience-flow" />
+	
+	
+	<error-handler name="Global_Error_Handler" doc:name="Global Error Handler - Common API Errors"><on-error-propagate type="VALIDATION:*" doc:name="Handle 400 - Bad Request"><set-variable variableName="httpStatus" value="#[400]" doc:name="Set HTTP Status - 400"/><ee:transform doc:name="Build 400 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "BAD_REQUEST",
+  message: "The request failed validation."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate><on-error-propagate type="HTTP:BAD_REQUEST" doc:name="Handle 400 - Bad Request"><set-variable variableName="httpStatus" value="#[400]" doc:name="Set HTTP Status - 400"/><ee:transform doc:name="Build 400 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "BAD_REQUEST",
+  message: "The downstream API rejected the request."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate><on-error-propagate type="HTTP:NOT_FOUND" doc:name="Handle 404 - Not Found"><set-variable variableName="httpStatus" value="#[404]" doc:name="Set HTTP Status - 404"/><ee:transform doc:name="Build 404 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "NOT_FOUND",
+  message: "The requested resource was not found."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate><on-error-propagate type="HTTP:CONNECTIVITY" doc:name="Handle 503 - Service Unavailable"><set-variable variableName="httpStatus" value="#[503]" doc:name="Set HTTP Status - 503"/><ee:transform doc:name="Build 503 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "SERVICE_UNAVAILABLE",
+  message: "A downstream service is unavailable."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate><on-error-propagate type="HTTP:TIMEOUT" doc:name="Handle 504 - Gateway Timeout"><set-variable variableName="httpStatus" value="#[504]" doc:name="Set HTTP Status - 504"/><ee:transform doc:name="Build 504 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "GATEWAY_TIMEOUT",
+  message: "A downstream service timed out."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate><on-error-propagate type="ANY" doc:name="Handle 500 - Internal Server Error"><set-variable variableName="httpStatus" value="#[500]" doc:name="Set HTTP Status - 500"/><ee:transform doc:name="Build 500 Error Response"><ee:message><ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  error: "INTERNAL_SERVER_ERROR",
+  message: "An unexpected error occurred while processing the request."
+}]]></ee:set-payload></ee:message></ee:transform></on-error-propagate></error-handler><flow name="get-all-contacts-experience-flow" doc:id="0df864df-cc05-4955-b17c-b31760dcf61b">
+        <http:listener doc:name="Receive GET All Contacts Request" doc:id="047b7a10-cf60-4fe3-8eb6-0413e58092a9" config-ref="Domain:HTTP-Listener-ExperienceAPI" path="/contacts" allowedMethods="GET">
+            <http:response statusCode="#[vars.httpStatus default 200]" doc:name="Success Response - Default 200"/>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" doc:name="Error Response - Global Error Handler">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <http:request method="GET" doc:name="Get Contacts from Process API" doc:id="0c0cdbf7-094f-4b71-8181-d6be31e99d7e" config-ref="Domain:HTTP-Request-Pro-Exp" path="/process/contacts"/>
+        <error-handler ref="Global_Error_Handler" doc:name="Use Global Error Handler"/></flow>
+
+    <!-- Experience API: GET Contact by ID -->
+    <flow name="get-contact-by-id-experience-flow" doc:id="42795114-bed7-41bd-ae4b-921bbbd831e5">
+        <http:listener doc:name="Receive GET Contact by ID Request" doc:id="c19c0bec-e4e5-488b-a9ae-5bc84522f31f" config-ref="Domain:HTTP-Listener-ExperienceAPI" path="/getbyid/contacts/{contactId}" allowedMethods="GET">
+            <http:response statusCode="#[vars.httpStatus default 200]" doc:name="Success Response - Default 200"/>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" doc:name="Error Response - Global Error Handler">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <http:request method="GET" doc:name="Get Contact by ID from Process API" doc:id="a9f97f0d-2809-42f9-bf1d-02e45f6f544d" config-ref="Domain:HTTP-Request-Pro-Exp" path="/process/contacts/{contactId}">
+            <http:uri-params>#[output application/java
+---
+{ contactId: attributes.uriParams.contactId }]</http:uri-params>
+        </http:request>
+        <error-handler ref="Global_Error_Handler" doc:name="Use Global Error Handler"/></flow>
+
+    <!-- Experience API: PATCH Contact -->
+    <flow name="update-contact-experience-flow" doc:id="66f6127f-553c-436e-b6b2-e40f0667bd0d">
+        <http:listener doc:name="Receive PATCH Update Contact Request" doc:id="97240fec-8e29-4f34-9463-29cd9951c0ab" config-ref="Domain:HTTP-Listener-ExperienceAPI" path="/patch/contacts/{contactId}" allowedMethods="PATCH">
+            <http:response statusCode="#[vars.httpStatus default 200]" doc:name="Success Response - Default 200"/>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" doc:name="Error Response - Global Error Handler">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <http:request method="PATCH" doc:name="Update Contact through Process API" doc:id="6ae3ff6d-8406-49ca-8931-1d4939eb2a43" config-ref="Domain:HTTP-Request-Pro-Exp" path="/process/contacts/{contactId}">
+            <http:uri-params>#[output application/java
+---
+{ contactId: attributes.uriParams.contactId }]</http:uri-params>
+        </http:request>
+        <error-handler ref="Global_Error_Handler" doc:name="Use Global Error Handler"/></flow>
+
+    <!-- Experience API: DELETE Contact -->
+    <flow name="delete-contact-experience-flow" doc:id="ee3d9ed9-a8d7-4457-bd00-78ca0ea39d7c">
+        <http:listener doc:name="Receive DELETE Contact Request" doc:id="dedbddd3-f204-48c6-8fa0-8abeef6daf67" config-ref="Domain:HTTP-Listener-ExperienceAPI" path="/delete/contacts/{contactId}" allowedMethods="DELETE">
+            <http:response statusCode="#[vars.httpStatus default 200]" doc:name="Success Response - Default 200"/>
+            <http:error-response statusCode="#[vars.httpStatus default 500]" doc:name="Error Response - Global Error Handler">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <http:request method="DELETE" doc:name="Delete Contact through Process API" doc:id="2bbd2941-f164-48b5-81c8-1268fd31d899" config-ref="Domain:HTTP-Request-Pro-Exp" path="/process/delete/contacts/{contactId}">
+            <http:uri-params>#[output application/java
+---
+{ contactId: attributes.uriParams.contactId }]</http:uri-params>
+        </http:request>
+        <error-handler ref="Global_Error_Handler" doc:name="Use Global Error Handler"/></flow>
+</mule>
