@@ -1,0 +1,99 @@
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+<munit:config name="experience-api-test-suite"/>
+<!--  Test 1: GET all contacts. The downstream Process API request is mocked.  -->
+<munit:test name="get-all-contacts-experience-flow-test" description="Returns contacts from the Process API">
+<munit:behavior>
+<munit-tools:mock-when processor="http:request">
+<munit-tools:with-attributes>
+<munit-tools:with-attribute attributeName="doc:name" whereValue="#[ 'Get Contacts from Process API' ]"/>
+</munit-tools:with-attributes>
+<munit-tools:then-return>
+<munit-tools:payload value="#[[{Id: '003MUNIT001', FirstName: 'Test', LastName: 'One', Email: 'one@example.com'}, {Id: '003MUNIT002', FirstName: 'Sample', LastName: 'Two', Email: 'two@example.com'}]]" mediaType="application/java"/>
+</munit-tools:then-return>
+</munit-tools:mock-when>
+</munit:behavior>
+<munit:execution>
+<munit:set-event>
+<munit:payload value="#[[]]" mediaType="application/java"/>
+</munit:set-event>
+<flow-ref name="get-all-contacts-experience-flow"/>
+</munit:execution>
+<munit:validation>
+<munit-tools:assert-that expression="#[sizeOf(payload)]" is="#[MunitTools::equalTo(2)]" message="Expected two contacts from the mocked Process API response"/>
+<munit-tools:assert-that expression="#[payload[0].Id]" is="#[MunitTools::equalTo('003MUNIT001')]" message="Expected the first contact ID to be preserved"/>
+</munit:validation>
+</munit:test>
+<!--  Test 2: GET contact by ID. The inbound URI parameter is supplied as event attributes.  -->
+<munit:test name="get-contact-by-id-experience-flow-test" description="Returns a contact by ID from the Process API">
+<munit:behavior>
+<munit-tools:mock-when processor="http:request">
+<munit-tools:with-attributes>
+<munit-tools:with-attribute attributeName="doc:name" whereValue="#[ 'Get Contact by ID from Process API' ]"/>
+</munit-tools:with-attributes>
+<munit-tools:then-return>
+<munit-tools:payload value="#[{Id: '003MUNIT010', FirstName: 'MUnit', LastName: 'Tester', Email: 'munit@example.com'}]" mediaType="application/java"/>
+</munit-tools:then-return>
+</munit-tools:mock-when>
+</munit:behavior>
+<munit:execution>
+<munit:set-event>
+<munit:payload value="#[[]]" mediaType="application/java"/>
+<munit:attributes value="#[{uriParams: {contactId: '003MUNIT010'}}]"/>
+</munit:set-event>
+<flow-ref name="get-contact-by-id-experience-flow"/>
+</munit:execution>
+<munit:validation>
+<munit-tools:assert-that expression="#[payload.Id]" is="#[MunitTools::equalTo('003MUNIT010')]" message="Expected the requested contact ID"/>
+<munit-tools:assert-that expression="#[payload.Email]" is="#[MunitTools::equalTo('munit@example.com')]" message="Expected the contact email to be returned"/>
+</munit:validation>
+</munit:test>
+<!--  Test 3: PATCH contact. The Process API HTTP request is mocked.  -->
+<munit:test name="update-contact-experience-flow-test" description="Passes a contact update to the Process API">
+<munit:behavior>
+<munit-tools:mock-when processor="http:request">
+<munit-tools:with-attributes>
+<munit-tools:with-attribute attributeName="doc:name" whereValue="#[ 'Update Contact through Process API' ]"/>
+</munit-tools:with-attributes>
+<munit-tools:then-return>
+<munit-tools:payload value="#[{message: 'Contact details updated successfully', contactId: '003MUNIT020', leadId: 20}]" mediaType="application/java"/>
+</munit-tools:then-return>
+</munit-tools:mock-when>
+</munit:behavior>
+<munit:execution>
+<munit:set-event>
+<munit:payload value="#[{FirstName: 'Updated', Email: 'updated@example.com'}]" mediaType="application/java"/>
+<munit:attributes value="#[{uriParams: {contactId: '003MUNIT020'}}]"/>
+</munit:set-event>
+<flow-ref name="update-contact-experience-flow"/>
+</munit:execution>
+<munit:validation>
+<munit-tools:assert-that expression="#[payload.contactId]" is="#[MunitTools::equalTo('003MUNIT020')]" message="Expected the response to contain the updated contact ID"/>
+<munit-tools:assert-that expression="#[payload.message]" is="#[MunitTools::equalTo('Contact details updated successfully')]" message="Expected the Process API success message"/>
+</munit:validation>
+</munit:test>
+<!--  Test 4: DELETE contact. The Process API HTTP request is mocked.  -->
+<munit:test name="delete-contact-experience-flow-test" description="Passes a contact deletion to the Process API">
+<munit:behavior>
+<munit-tools:mock-when processor="http:request">
+<munit-tools:with-attributes>
+<munit-tools:with-attribute attributeName="doc:name" whereValue="#[ 'Delete Contact through Process API' ]"/>
+</munit-tools:with-attributes>
+<munit-tools:then-return>
+<munit-tools:payload value="#[{message: 'Contact deleted successfully', contactId: '003MUNIT030', leadId: 30, leadStatus: 'REJECTED_BY_PARTNER', syncStatus: 'UNSYNCED'}]" mediaType="application/java"/>
+</munit-tools:then-return>
+</munit-tools:mock-when>
+</munit:behavior>
+<munit:execution>
+<munit:set-event>
+<munit:payload value="#[[]]" mediaType="application/java"/>
+<munit:attributes value="#[{uriParams: {contactId: '003MUNIT030'}}]"/>
+</munit:set-event>
+<flow-ref name="delete-contact-experience-flow"/>
+</munit:execution>
+<munit:validation>
+<munit-tools:assert-that expression="#[payload.contactId]" is="#[MunitTools::equalTo('003MUNIT030')]" message="Expected the deleted contact ID in the response"/>
+<munit-tools:assert-that expression="#[payload.leadStatus]" is="#[MunitTools::equalTo('REJECTED_BY_PARTNER')]" message="Expected the partner deletion lead status"/>
+<munit-tools:assert-that expression="#[payload.syncStatus]" is="#[MunitTools::equalTo('UNSYNCED')]" message="Expected the lead sync status to be UNSYNCED"/>
+</munit:validation>
+</munit:test>
+</mule>
