@@ -50,6 +50,11 @@
 					</execution>
 				</executions>
 				<configuration>
+				<argLines>
+    <argLine>-Djavax.net.ssl.trustStore=C:/Temp/cacerts</argLine>
+    <argLine>-Djavax.net.ssl.trustStorePassword=changeit</argLine>
+    <argLine>-Dsecure.key=${env.MULE_SECURE_KEY}</argLine>
+</argLines>
 					<coverage>
 						<runCoverage>true</runCoverage>
 						<formats>

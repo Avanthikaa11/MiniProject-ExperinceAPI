@@ -1,0 +1,49 @@
+
+pipeline {
+    agent any
+
+    tools {
+        jdk 'Zulu-17'
+        maven 'Maven-3.9.12'
+    }
+
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
+    stages {
+        stage('Build and MUnit Tests') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'mule-secure-key',
+                        variable: 'MULE_SECURE_KEY'
+                    )
+                ]) {
+                    bat '''
+                        set "MAVEN_OPTS=-Djavax.net.ssl.trustStore=C:/Temp/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dsecure.key=%MULE_SECURE_KEY%"
+                        mvn -B -U clean verify
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit testResults: '**/target/surefire-reports/TEST-*.xml',
+                  allowEmptyResults: true
+
+            archiveArtifacts artifacts: '**/target/*.jar',
+                             allowEmptyArchive: true
+        }
+
+        success {
+            echo 'Experience API build and MUnit tests passed.'
+        }
+
+        failure {
+            echo 'Experience API build or MUnit tests failed.'
+        }
+    }
+}
